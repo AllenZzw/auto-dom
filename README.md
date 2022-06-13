@@ -6,7 +6,6 @@ You can use MiniZinc to model constraint satisfaction and optimisation problems
 in a high-level, solver-independent way. The tool will analyze the model and generate 
 dominannce breaking constraints if there are any. 
 
-<!-- GETTING STARTED -->
 ## Getting Started
 
 To get a MiniZinc up and running follow these simple steps.
@@ -49,7 +48,7 @@ solve maximize sum (i in 1..n) (v[i]*x[i]);
 
 Using the following command 
 ```
-build/auto-dom knapsack.mzn 
+build/minizinc knapsack.mzn 
 ```
 
 The output will be the dominance breaking constraints for the knapsack problem like 
