@@ -58,6 +58,7 @@ public:
   std::chrono::milliseconds time = std::chrono::milliseconds(0);
   int minNogoodLength = 2; 
   int maxNogoodLength = 2; 
+  bool dominance_jump = false; 
 };
 
 class GeasVariable {

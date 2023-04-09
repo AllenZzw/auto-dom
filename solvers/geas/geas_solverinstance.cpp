@@ -619,20 +619,36 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
           nogoodLists[srcVars].push_back(nogoods); 
 
           // output dominance breaking nogood 
-          std::cout << "constraint "; 
+          std::stringstream var_str, dominating_str, dominated_str;
+          var_str << "constraint dominance(["; 
+          dominating_str << "["; 
+          dominated_str << "["; 
           for (unsigned int i = 0; i != srcVars.size(); i++) {
-            auto geas_var = _variableMap1.get(srcVars[i]); 
-            std::cout <<  _variableName[srcVars[i]] << " != "; 
-            if (geas_var.isBool())
-              std::cout << (solution.value(geas_var.boolVar())?"true":"false"); 
-            else 
-              std::cout << solution[geas_var.intVar()]; 
-            if (i+1 != srcVars.size())
-              std::cout << " \\/ "; 
-            else 
-              std::cout << ";" << std::endl;  
+            auto var0 = _variableMap0.get(srcVars[i]); 
+            auto var1 = _variableMap1.get(srcVars[i]); 
+            var_str <<  _variableName[srcVars[i]]; 
+            if (var0.isBool() || var1.isBool()) {
+              std::stringstream ssm;
+              ssm << "dominance jumping does not support boolean variables.";
+              throw InternalError(ssm.str());
+            }
+            else {
+              dominating_str << solution[var0.intVar()];  
+              dominated_str << solution[var1.intVar()];  
+            }
+            if (i+1 != srcVars.size()) {
+              var_str << ","; 
+              dominating_str << ","; 
+              dominated_str << ","; 
+            }
+            else {
+              var_str << "]"; 
+              dominating_str << "]"; 
+              dominated_str << "]"; 
+            }
           }
-
+          std::cout << var_str.str() << "," << dominating_str.str() << "," << dominated_str.str() << ");" << std::endl;  
+          
           // std::cout << "constraint "; 
           // for (unsigned int i = 0; i != srcVars.size(); i++) {
           //   auto geas_var = _variableMap0.get(srcVars[i]); 
@@ -938,8 +954,9 @@ bool GeasSolverFactory::processOption(SolverInstanceBase::Options* opt, int& i,
     if (n >= 1) {
       _opt->maxNogoodLength = n;
     }
-  }
-  else if (argv[i] == "--obj-probe") {
+  } else if (argv[i] == "--jump") {
+    _opt->dominance_jump = true; 
+  } else if (argv[i] == "--obj-probe") {
     if (++i == argv.size()) {
       return false;
     }

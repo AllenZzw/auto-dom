@@ -1,0 +1,1 @@
+predicate dominance(array[int] of var int: x, array[int] of int: dominating, array[int] of int: dominated) = exists(i in index_set(x))(x[i] != dominated[i]);
