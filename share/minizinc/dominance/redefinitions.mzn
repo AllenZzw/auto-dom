@@ -42,11 +42,7 @@ predicate bool_lin_ne_imp(array [int] of int: as, array [int] of var bool: bs,
                           var int: c, var bool: r);
 
 %% Special cases for binary-ish x, y.
-predicate int_lin_eq_reif(
-  array [int] of int: cs, array [int] of var int: xs, int: k, var bool: r) =
-  let { var bool: a; var bool: b } in
-  (r <-> (a /\ b)) /\ int_lin_le_reif(cs, xs, k, a)
-  /\ int_lin_le_reif([-c | c in cs], xs, -k, b);
+
 
 predicate bool_xor(var bool: x, var bool: y, var bool: r) =
      bool_clause([x,y],[r])

@@ -4,7 +4,7 @@ predicate dom_cumulative_var(array[int] of var int: s,
   var int: b) 
   = let { set of int: tasks = index_set(s), 
     set of int: times = min([lb(s[i]) | i in tasks]) .. max([ub(s[i]) + ub(d[i])-1 | i in tasks]) } in 
-    forall( t in times )( b >= sum( i in tasks ) (bool2int( s[i] <= t /\ t < s[i] + d[i] ) * r[i]) );
+    b = max( t in times )( sum( i in tasks)(bool2int( s[i] <= t /\ t < s[i] + d[i] ) * r[i]) );
   
 predicate dom_cumulative(array[int] of var int: s,
   array[int] of int: d,

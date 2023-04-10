@@ -116,7 +116,8 @@ void GeasSolverInstance::registerConstraints() {
   registerConstraint("bool_clause", GeasConstraints::a_bool_clause, GeasConstraints::p_bool_clause, GeasConstraints::d_bool_clause);
   registerConstraint("array_bool_or", GeasConstraints::a_array_bool_and_or, GeasConstraints::p_array_bool_or, GeasConstraints::d_array_bool_or);
   registerConstraint("array_bool_and", GeasConstraints::a_array_bool_and_or, GeasConstraints::p_array_bool_and, GeasConstraints::d_array_bool_and);
-  registerConstraint("bool_clause_reif", GeasConstraints::a_bool_clause_reif, GeasConstraints::p_bool_clause_reif, GeasConstraints::d_bool_clause_reif);
+  // registerConstraint("array_bool_xor", GeasConstraints::a_array_bool_xor, GeasConstraints::p_array_bool_xor, GeasConstraints::d_array_bool_xor);
+  // registerConstraint("bool_clause_reif", GeasConstraints::a_bool_clause_reif, GeasConstraints::p_bool_clause_reif, GeasConstraints::d_bool_clause_reif);
 
   // /* Boolean Linear Constraints todo: handle Boolean linear constraints */
   registerConstraint("bool_lin_eq", GeasConstraints::a_lin_eq, GeasConstraints::p_bool_lin_eq, GeasConstraints::d_bool_lin_eql);
@@ -130,8 +131,8 @@ void GeasSolverInstance::registerConstraints() {
   registerConstraint("bool2int", GeasConstraints::a_bool2int, GeasConstraints::p_bool2int, GeasConstraints::d_no_dominance);
 
   /* Element Constraints */
-  registerConstraint("array_int_element", GeasConstraints::a_array_lit_element, GeasConstraints::p_array_int_element, GeasConstraints::d_no_dominance);
-  registerConstraint("array_bool_element", GeasConstraints::a_array_lit_element, GeasConstraints::p_array_bool_element, GeasConstraints::d_no_dominance);
+  registerConstraint("array_int_element", GeasConstraints::a_array_lit_element, GeasConstraints::p_array_int_element, GeasConstraints::d_array_int_element);
+  registerConstraint("array_bool_element", GeasConstraints::a_array_lit_element, GeasConstraints::p_array_bool_element, GeasConstraints::d_array_bool_element);
   // registerConstraint("array_var_int_element", GeasConstraints::a_array_lit_element, GeasConstraints::p_array_var_int_element, GeasConstraints::d_var_int_element);
   // registerConstraint("array_var_bool_element", GeasConstraints::a_array_lit_element, GeasConstraints::p_array_var_bool_element, GeasConstraints::d_var_bool_element);
 
@@ -254,9 +255,7 @@ void GeasSolverInstance::processFlatZinc() {
             throw -1;
           for (int i = 0; i < dims->length(); i++) {
             IntSetVal* isv = eval_intset(getEnv()->envi(), (*dims)[i]);
-            if (isv->size() == 0)
-              throw InternalError("zero dimension for array variable");
-            else {
+            if (isv->size() != 0) {
               cur_idx.emplace_back(static_cast<int>(isv->min().toInt())); 
               dims_v.emplace_back(static_cast<int>(isv->min().toInt()),static_cast<int>(isv->max().toInt()));
             }
@@ -299,8 +298,7 @@ void GeasSolverInstance::processFlatZinc() {
             _variableMono[id] = VAR_NONE; 
             _variableSensitive[id] = false;
             _indepVars.push_back(id);
-          }
-            
+          } 
         }
       }
     }
@@ -476,6 +474,7 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
             // if the constriant defines a variable, create variable and post constraint 
             if (c->ann().containsCall(std::string("defines_var"))) {
               Id* defVar = resolveVarId(c->ann().getCall(std::string("defines_var"))->arg(0));
+              // std::cout << "create variable " << defVar->str() << std::endl;
               createVar(*_domsolver, defVar->decl());
               activeVars.push_back(defVar);
               fixedVars.insert(defVar);
@@ -493,8 +492,10 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
       for (auto sit = activeCons.begin(); sit != activeCons.end(); sit++) {
         if ((*sit)->ann().containsCall(std::string("defines_var"))) {
             Id* defVar = resolveVarId((*sit)->ann().getCall(std::string("defines_var"))->arg(0));
-            if (defVar == _objVar)
+            if (defVar == _objVar) {
+              // std::cout << "post dominance condition for " << (*sit)->id() << std::endl; 
               _domPoster.post(*sit, fixedVars); 
+            }
         }
       }
       
@@ -686,6 +687,22 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
           //     std::cout << solution[geas_var.intVar()]; 
           //   std::cout << "(" << _variableMono[id] << ")" << ","; 
           // } 
+          // std::cout << std::endl; 
+
+          // for (int l = 0; l < x.size(); l++) 
+          //   std::cout << solution[x[l]] << ",";
+          // std::cout << std::endl; 
+
+          // for (int l = 0; l < y.size(); l++) 
+          //   std::cout << solution[y[l]] << ",";
+          // std::cout << std::endl; 
+
+          // for (int l = 0; l < b.size(); l++) 
+          //   std::cout << (solution.value(b[l])?"true":"false") << ",";
+          // std::cout << std::endl; 
+
+          // for (int l = 0; l < r.size(); l++) 
+          //   std::cout << (solution.value(r[l])?"true":"false") << ",";
           // std::cout << std::endl; 
           
           if (!geas::add_clause(*(_domsolver->data), clause))

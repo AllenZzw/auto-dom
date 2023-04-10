@@ -187,6 +187,9 @@ DominanceImpl(d_array_int_minimum);
 DominanceImpl(d_array_int_maximum);
 DominanceImpl(d_table_int);
 
+DominanceImpl(d_array_int_element);
+DominanceImpl(d_array_bool_element);
+
 DominanceImpl(d_no_dominance);
 
 }  // namespace GeasConstraints
