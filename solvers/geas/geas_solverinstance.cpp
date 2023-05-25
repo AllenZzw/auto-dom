@@ -11,6 +11,9 @@
 
 #include <minizinc/solvers/geas/geas_constraints.hh>
 #include <minizinc/solvers/geas_solverinstance.hh>
+#if defined(__linux__)
+#include <limits.h>
+#endif
 
 #include <geas/constraints/builtins.h>
 #include <list>
@@ -336,27 +339,29 @@ void GeasSolverInstance::processFlatZinc() {
     depVars.pop_front();
   }
 
-  // for (auto mit = _variableName.begin(); mit != _variableName.end(); mit++)
-  //   std::cout << mit->first->str() << ": " << mit->second << std::endl; 
-  // for (auto it = _indepVars.begin(); it != _indepVars.end(); it++ ) 
-  //   std::cout << _variableName[*it] << " "; 
-  // std::cout << std::endl; 
-  // for (auto mit = _variableMono.begin(); mit != _variableMono.end(); mit++)
-  //   std::cout << mit->first->str() << ": " << mit->second << std::endl; 
-  // for (auto it = _indepVars.begin(); it != _indepVars.end(); it++ ) 
-  //   std::cout << (*it)->str() << ": " << _variableName[*it] << std::endl;
-  // for (auto mit = _alias.begin(); mit != _alias.end(); mit++) {
-  //   std::cout << mit->first->str() << " : "; 
-  //   if (mit->second != nullptr && mit->second->dynamicCast<Id>() != nullptr) 
-  //     std::cout << mit->second->dynamicCast<Id>()->str(); 
-  //   std::cout << "\\" << std::endl;  
-  // }
-  // for (auto mit = _argsToConstraint.begin(); mit != _argsToConstraint.end(); mit++) {
-  //   std::cout << mit->first->str() << " : "; 
-  //   for (auto lit = mit->second.begin(); lit != mit->second.end(); lit++)
-  //     std::cout << (*lit)->id() << ", "; 
-  //   std::cout << std::endl; 
-  // }
+#ifdef DEBUG
+  for (auto mit = _variableName.begin(); mit != _variableName.end(); mit++)
+    std::cout << mit->first->str() << ": " << mit->second << std::endl; 
+  for (auto it = _indepVars.begin(); it != _indepVars.end(); it++ ) 
+    std::cout << _variableName[*it] << " "; 
+  std::cout << std::endl; 
+  for (auto mit = _variableMono.begin(); mit != _variableMono.end(); mit++)
+    std::cout << mit->first->str() << ": " << mit->second << std::endl; 
+  for (auto it = _indepVars.begin(); it != _indepVars.end(); it++ ) 
+    std::cout << (*it)->str() << ": " << _variableName[*it] << std::endl;
+  for (auto mit = _alias.begin(); mit != _alias.end(); mit++) {
+    std::cout << mit->first->str() << " : "; 
+    if (mit->second != nullptr && mit->second->dynamicCast<Id>() != nullptr) 
+      std::cout << mit->second->dynamicCast<Id>()->str(); 
+    std::cout << "\\" << std::endl;  
+  }
+  for (auto mit = _argsToConstraint.begin(); mit != _argsToConstraint.end(); mit++) {
+    std::cout << mit->first->str() << " : "; 
+    for (auto lit = mit->second.begin(); lit != mit->second.end(); lit++)
+      std::cout << (*lit)->id() << ", "; 
+    std::cout << std::endl; 
+  }
+#endif 
 }
 
 void MiniZinc::GeasSolverInstance::createVar(geas::solver& s, VarDecl* vd) {
@@ -493,7 +498,7 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
         if ((*sit)->ann().containsCall(std::string("defines_var"))) {
             Id* defVar = resolveVarId((*sit)->ann().getCall(std::string("defines_var"))->arg(0));
             if (defVar == _objVar) {
-              // std::cout << "post dominance condition for " << (*sit)->id() << std::endl; 
+              // std::cout << "post dominance condition for " << (*sit)->id() << " defining " << defVar->str() << std::endl; 
               _domPoster.post(*sit, fixedVars); 
             }
         }
@@ -504,7 +509,7 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
         if ((*sit)->ann().containsCall(std::string("defines_var"))) {
           Id* defVar = resolveVarId((*sit)->ann().getCall(std::string("defines_var"))->arg(0));
           if (defVar != _objVar) {
-            // std::cout << "post dominance condition for " << (*sit)->id() << std::endl; 
+            // std::cout << "post dominance condition for " << (*sit)->id() << " definiing " << defVar->str() << std::endl; 
             _domPoster.post(*sit, fixedVars); 
           }
         }

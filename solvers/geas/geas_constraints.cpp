@@ -14,6 +14,9 @@
 
 #include <minizinc/solvers/geas/geas_constraints.hh>
 #include <minizinc/solvers/geas_solverinstance.hh>
+#if defined(__linux__)
+#include <limits.h>
+#endif 
 
 #include <geas/constraints/builtins.h>
 #include <geas/constraints/flow/flow.h>
@@ -965,6 +968,7 @@ void a_lin_le_reif(SolverInstanceBase& s, Call* call) {
 
 void a_lin_eql_reif(SolverInstanceBase& s, Call* call) {
   std::vector<Id*> vars = VARIDARRAY(1);
+  vec<int> cons = INTARRAY(0);
   assert(cons.size() == vars.size());
   if (call->ann().containsCall(std::string("defines_var"))) {
     Id* defVar = SI.asVarId(call->ann().getCall(std::string("defines_var"))->arg(0));
@@ -1410,6 +1414,7 @@ void d_int_lin_le(SolverInstanceBase& s, const Call* call, const std::unordered_
 }
 
 void d_int_lin_eql_reif(SolverInstanceBase& s, const Call* call, const std::unordered_set<Id*>& fixedVars) {
+  vec<int> cons = INTARRAY(0);
   std::vector<Id*> vars = VARIDARRAY(1);
   assert(cons.size() == vars.size());
   if (call->ann().containsCall(std::string("defines_var"))) {
