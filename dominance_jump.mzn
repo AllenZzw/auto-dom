@@ -1,1 +1,2 @@
+predicate dominance_jump(array[int] of var int: x, array[int] of int: dominating, array[int] of int: dominated);
 predicate dominance(array[int] of var int: x, array[int] of int: dominating, array[int] of int: dominated) = dominance_jump(x, dominating, dominated);

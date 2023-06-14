@@ -15,6 +15,7 @@
 #include <minizinc/solver.hh>
 
 #include <geas/solver/solver.h>
+#include <list> 
 
 namespace MiniZinc {
 enum Monotonicity { VAR_NONE, VAR_INC, VAR_DEC, VAR_EQL };
@@ -157,7 +158,7 @@ public:
   std::set<Id*> getArguments(Call* c);
 
   IdMap<VarId> _variableMap0, _variableMap1; // map variable id to variable instance 
-  std::vector<geas::intvar> _sensvar; // sensitive variable which makes the objective strictly better
+  std::list<geas::intvar> _sensvar0, _sensvar1; // sensitive variable which makes the objective strictly better
   Id* _objVar; 
   // TODO: create only when necessary or use Geas internal
   geas::intvar zero;

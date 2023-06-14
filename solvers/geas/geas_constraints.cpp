@@ -1311,8 +1311,13 @@ void d_int_lin_eq_func(SolverInstanceBase& s, const Call* call, const std::unord
     geas::linear_le(SD, neg, vars0, 0);
     geas::int_le(SD, sum1, sum0, 0);
     if (defVar != nullptr && SI._variableSensitive[defVar]) {
-      SI._sensvar.push_back(sum1);
-      SI._sensvar.push_back(sum0);
+      if (defVar == SI._objVar) {
+        SI._sensvar0.push_front(sum1);
+        SI._sensvar1.push_front(sum0);
+      } else {
+        SI._sensvar0.push_back(sum1);
+        SI._sensvar1.push_back(sum0);
+      }
     }
   }
   else if (mono == VAR_DEC) {
@@ -1320,8 +1325,13 @@ void d_int_lin_eq_func(SolverInstanceBase& s, const Call* call, const std::unord
     geas::linear_le(SD, neg, vars1, 0);
     geas::int_le(SD, sum0, sum1, 0);
     if (defVar != nullptr && SI._variableSensitive[defVar]) {
-      SI._sensvar.push_back(sum0);
-      SI._sensvar.push_back(sum1);
+      if (defVar == SI._objVar) {
+        SI._sensvar0.push_front(sum0);
+        SI._sensvar1.push_front(sum1);
+      } else {
+        SI._sensvar0.push_back(sum0);
+        SI._sensvar1.push_back(sum1);
+      }
     }
   }
   else if (mono == VAR_EQL) {
@@ -1409,8 +1419,8 @@ void d_int_lin_le(SolverInstanceBase& s, const Call* call, const std::unordered_
 
   geas::int_le(SD, sum0, sum1, 0);
 
-  SI._sensvar.push_back(sum0);
-  SI._sensvar.push_back(sum1);
+  SI._sensvar0.push_back(sum0);
+  SI._sensvar1.push_back(sum1);
 }
 
 void d_int_lin_eql_reif(SolverInstanceBase& s, const Call* call, const std::unordered_set<Id*>& fixedVars) {
@@ -1858,8 +1868,8 @@ void d_bool_lin_le(SolverInstanceBase& s, const Call* call, const std::unordered
   geas::bool_linear_le(SD, geas::at_True, sum1, parcons, vars1, 0);
   geas::int_le(SD, sum0, sum1, 0); 
 
-  SI._sensvar.push_back(sum0);
-  SI._sensvar.push_back(sum1);
+  SI._sensvar0.push_back(sum0);
+  SI._sensvar1.push_back(sum1);
 }
 
 void d_bool_lin_eql_reif(SolverInstanceBase& s, const Call* call, const std::unordered_set<Id*>& fixedVars) {

@@ -147,8 +147,6 @@ void GeasSolverInstance::registerConstraints() {
   registerConstraint("table_int", GeasConstraints::a_table_int, GeasConstraints::p_table_int, GeasConstraints::d_table_int);
 }
 
-
-// todo: factor out the analyzer to solver_instance_base 
 // compute the monotonicity of each internal variables and the dependency of variables 
 void GeasSolverInstance::processFlatZinc() {
   // constraints or the constraint defining the objective variable 
@@ -450,7 +448,7 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
     std::fill(v.begin(), v.begin() + l, true);
     do {
       if (remaining_time() < 0.0) 
-        return SolverInstance::SAT;
+        return SolverInstance::UNKNOWN;
       std::vector<Id*> srcVars;
       for (int i = 0; i < n; ++i) { if (v[i]) { srcVars.push_back(_indepVars[i]); } }
       // for (int i = 0; i != srcVars.size(); i++) { std::cout << srcVars[i]->str() << ": " << _variableName[srcVars[i]] << " "; }
@@ -458,7 +456,9 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
       _domsolver = new geas::solver(); 
       _variableMap0.clear(); 
       _variableMap1.clear(); 
-      _sensvar.clear();
+      _sensvar0.clear();
+      _sensvar1.clear();
+      
       // initialize independent variables 
       for (auto it = srcVars.begin(); it != srcVars.end(); it++)
         createVar(*_domsolver, (*it)->decl()); 
@@ -483,6 +483,7 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
               createVar(*_domsolver, defVar->decl());
               activeVars.push_back(defVar);
               fixedVars.insert(defVar);
+              constrToVar.push_back({c, defVar});
             }
             // post the constraint directly 
             _constraintRegistry.post(c); 
@@ -495,28 +496,8 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
 
       // post dominance condition for the constraint defining the objective variable 
       for (auto sit = activeCons.begin(); sit != activeCons.end(); sit++) {
-        if ((*sit)->ann().containsCall(std::string("defines_var"))) {
-            Id* defVar = resolveVarId((*sit)->ann().getCall(std::string("defines_var"))->arg(0));
-            if (defVar == _objVar) {
-              // std::cout << "post dominance condition for " << (*sit)->id() << " defining " << defVar->str() << std::endl; 
-              _domPoster.post(*sit, fixedVars); 
-            }
-        }
-      }
-      
-      // post dominance condition for constriants that are not covered 
-      for (auto sit = activeCons.begin(); sit != activeCons.end(); sit++) {
-        if ((*sit)->ann().containsCall(std::string("defines_var"))) {
-          Id* defVar = resolveVarId((*sit)->ann().getCall(std::string("defines_var"))->arg(0));
-          if (defVar != _objVar) {
-            // std::cout << "post dominance condition for " << (*sit)->id() << " definiing " << defVar->str() << std::endl; 
-            _domPoster.post(*sit, fixedVars); 
-          }
-        }
-        else {
-          // std::cout << "post dominance condition for " << (*sit)->id() << std::endl; 
-          _domPoster.post(*sit, fixedVars);   
-        }
+        // std::cout << "post dominance condition for " << (*sit)->id() << " defining " << defVar->str() << std::endl; 
+        _domPoster.post(*sit, fixedVars);
       }
       
       // add clauses to prevent redundant solving 
@@ -548,9 +529,13 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
       // lexicographical ordering  
       {
         vec<geas::intvar> x, y;
-        for(unsigned int i=0; i<_sensvar.size(); i=i+2) {
-          x.push(_sensvar[i]);
-          y.push(_sensvar[i+1]);
+        std::list<geas::intvar>::iterator it0 = _sensvar0.begin(); 
+        std::list<geas::intvar>::iterator it1 = _sensvar1.begin(); 
+        while (it0 != _sensvar0.end()) {
+          x.push(*it0);
+          y.push(*it1);
+          it0++; 
+          it1++;
         }
         for (unsigned int i=0; i!=srcVars.size(); i++) {
           GeasVariable& var0 = resolveVarDom(follow_id_to_decl(srcVars[i]), true); 
@@ -601,7 +586,6 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
       int solutionNr = 0; 
       while (res == geas::solver::SAT)
       {
-        // res = _domsolver->solve({0.5, 0});
         res = _domsolver->solve({remaining_time(), 0});
         if(res == geas::solver::SAT) {
           solutionNr++; 
@@ -637,8 +621,7 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
               std::stringstream ssm;
               ssm << "dominance jumping does not support boolean variables.";
               throw InternalError(ssm.str());
-            }
-            else {
+            } else {
               dominating_str << solution[var0.intVar()];  
               dominated_str << solution[var1.intVar()];  
             }
@@ -646,8 +629,7 @@ SolverInstanceBase::Status MiniZinc::GeasSolverInstance::solve() {
               var_str << ","; 
               dominating_str << ","; 
               dominated_str << ","; 
-            }
-            else {
+            } else {
               var_str << "]"; 
               dominating_str << "]"; 
               dominated_str << "]"; 
